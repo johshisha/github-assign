@@ -70,6 +70,7 @@ function parseGithubURL(url) {
   return {
     owner: match[1],
     repo: match[2],
+    type: match[3],
     number: match[4]
   };
 }
@@ -80,16 +81,22 @@ function parseGithubURL(url) {
  * @return {Array} An array of pull request files
  */
 function getPullRequestFiles(resource) {
-  return github.pullRequests
-    .getFiles({
-      owner: resource.owner,
-      repo: resource.repo,
-      number: resource.number,
-      per_page: 100
-    })
-    .then(function(res) {
-      return res.data;
-    });
+  if (resource.type == 'pull') {
+    console.log('pull get files')
+    return github.pullRequests
+      .getFiles({
+        owner: resource.owner,
+        repo: resource.repo,
+        number: resource.number,
+        per_page: 100
+      })
+      .then(function(res) {
+        return res.data;
+      });
+  } else {
+    return null;
+  }
+
 }
 
 /**
@@ -97,23 +104,27 @@ function getPullRequestFiles(resource) {
  * @return {BlameRangeList} list of Git blames in a file
  */
 function getBlameForCommitFile(resource) {
-  return GraphQLRequest({
-    token: token,
-    query: blameQuery,
-    variables: {
-      owner: resource.owner,
-      repo: resource.repo,
-      sha: resource.sha,
-      path: resource.path
-    }
-  })
-    .then(function(res) {
-      return BlameRangeList(res.data.repository.object.blame);
+  if (resource.type == 'pull') {
+    return GraphQLRequest({
+      token: token,
+      query: blameQuery,
+      variables: {
+        owner: resource.owner,
+        repo: resource.repo,
+        sha: resource.sha,
+        path: resource.path
+      }
     })
-    .catch(function(e) {
-      log('[pull-review] getBlameForCommitFile', e);
-      return null;
-    });
+      .then(function(res) {
+        return BlameRangeList(res.data.repository.object.blame);
+      })
+      .catch(function(e) {
+        log('[pull-review] getBlameForCommitFile', e);
+        return null;
+      });
+  } else {
+    return null;
+  }
 }
 
 /**
@@ -179,9 +190,15 @@ function getRepoFile(resource, path) {
  * @param  {Object} resource - A GitHub resource
  */
 function getPullRequest(resource) {
-  return github.pullRequests.get(resource).then(function(res) {
-    return res.data;
-  });
+  if (resource.type == 'pull') {
+    return github.pullRequests.get(resource).then(function(res) {
+      return res.data;
+    });
+  } else {
+    return github.issues.get(resource).then(function(res) {
+      return res.data;
+    });
+  }
 }
 
 /**
@@ -189,16 +206,20 @@ function getPullRequest(resource) {
  * @return {Array} A list of commits in a pull request
  */
 function getPullRequestCommits(resource) {
-  return github.pullRequests
-    .getCommits({
-      owner: resource.owner,
-      repo: resource.repo,
-      number: resource.number,
-      per_page: 100
-    })
-    .then(function(res) {
-      return res.data;
-    });
+  if (resource.type == 'pull') {
+    return github.pullRequests
+      .getCommits({
+        owner: resource.owner,
+        repo: resource.repo,
+        number: resource.number,
+        per_page: 100
+      })
+      .then(function(res) {
+        return res.data;
+      });
+  } else {
+    return null;
+  }
 }
 
 /**
@@ -222,15 +243,19 @@ function getPullRequestLabels(resource) {
  * @return {Array} A list of pull request review requests
  */
 function getReviewRequests(resource) {
-  return github.pullRequests
-    .getReviewRequests({
-      owner: resource.owner,
-      repo: resource.repo,
-      number: resource.number
-    })
-    .then(function(res) {
-      return res.data;
-    });
+  if (resource.type == 'pull') {
+    return github.pullRequests
+      .getReviewRequests({
+        owner: resource.owner,
+        repo: resource.repo,
+        number: resource.number
+      })
+      .then(function(res) {
+        return res.data;
+      });
+  } else {
+    return null;
+  }
 }
 
 /**
@@ -239,12 +264,16 @@ function getReviewRequests(resource) {
  * @return {Object} Updated GitHub resource
  */
 function createReviewRequest(resource, reviewers) {
-  return github.pullRequests.createReviewRequest({
-    owner: resource.owner,
-    repo: resource.repo,
-    number: resource.number,
-    reviewers: reviewers
-  });
+  if (resource.type == 'pull') {
+    return github.pullRequests.createReviewRequest({
+      owner: resource.owner,
+      repo: resource.repo,
+      number: resource.number,
+      reviewers: reviewers
+    });
+  } else {
+    return null;
+  }
 }
 
 /**
@@ -262,58 +291,62 @@ function deleteReviewRequest(resource, reviewers) {
    * GraphQL is used for all calls, ignoring node IDs in REST API responses.
    */
 
-  var promises = [
-    GraphQLRequest({
-      token: token,
-      query: getPullRequestQuery,
-      variables: {
-        owner: resource.owner,
-        repo: resource.repo,
-        pull: resource.number
-      }
-    }),
-    GraphQLRequest({
-      token: token,
-      query: getReviewRequestsQuery,
-      variables: {
-        owner: resource.owner,
-        repo: resource.repo,
-        pull: resource.number
-      }
-    })
-  ];
-
-  var pullRequestId;
-
-  return Promise.all(promises)
-    .then(function (res) {
-      pullRequestId = res[0].data.repository.pullRequest.id;
-      var reviewRequests = res[1].data.repository.pullRequest.reviewRequests.nodes.map(function (res) {
-        if (res.requestedReviewer.organization) {
-          throw Error('Teams not yet supported for review requests');
-        }
-
-        return res.requestedReviewer;
-      });
-
-      var reviewersToKeep = reviewRequests.filter(function (existingReviewer) {
-        return reviewers.indexOf(existingReviewer.login) === -1;
-      }).map(function (reviewer) {
-        return reviewer.id;
-      });
-
-      return reviewersToKeep;
-    })
-    .then(function (res) {
-      return GraphQLRequest({
+   if (resource.type == 'pull') {
+    var promises = [
+      GraphQLRequest({
         token: token,
-        query: requestReviewsMutation,
+        query: getPullRequestQuery,
         variables: {
-          pullRequestId: pullRequestId,
-          userIds: res
+          owner: resource.owner,
+          repo: resource.repo,
+          pull: resource.number
         }
+      }),
+      GraphQLRequest({
+        token: token,
+        query: getReviewRequestsQuery,
+        variables: {
+          owner: resource.owner,
+          repo: resource.repo,
+          pull: resource.number
+        }
+      })
+    ];
+
+    var pullRequestId;
+
+    return Promise.all(promises)
+      .then(function (res) {
+        pullRequestId = res[0].data.repository.pullRequest.id;
+        var reviewRequests = res[1].data.repository.pullRequest.reviewRequests.nodes.map(function (res) {
+          if (res.requestedReviewer.organization) {
+            throw Error('Teams not yet supported for review requests');
+          }
+
+          return res.requestedReviewer;
+        });
+
+        var reviewersToKeep = reviewRequests.filter(function (existingReviewer) {
+          return reviewers.indexOf(existingReviewer.login) === -1;
+        }).map(function (reviewer) {
+          return reviewer.id;
+        });
+
+        return reviewersToKeep;
+      })
+      .then(function (res) {
+        return GraphQLRequest({
+          token: token,
+          query: requestReviewsMutation,
+          variables: {
+            pullRequestId: pullRequestId,
+            userIds: res
+          }
+        });
       });
-    });
+    } else {
+      return null
+    }
 }
 
 /**
