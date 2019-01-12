@@ -60,7 +60,7 @@ function BlameRangeList(blame) {
  * @return {Object} GitHub resource parsed from URL
  */
 function parseGithubURL(url) {
-  var githubUrlRe = /github\.com\/([^/]+)\/([^/]+)\/pull\/([0-9]+)/;
+  var githubUrlRe = /github\.com\/([^/]+)\/([^/]+)\/(pull|issues)\/([0-9]+)/;
   var match = url.match(githubUrlRe);
 
   if (!match) {
@@ -70,7 +70,7 @@ function parseGithubURL(url) {
   return {
     owner: match[1],
     repo: match[2],
-    number: match[3]
+    number: match[4]
   };
 }
 

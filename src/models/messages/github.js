@@ -11,7 +11,8 @@ module.exports = function(input) {
   });
 
   return (
+    'assigned: ' +
     users.join(', ') +
-    ': please review this pull request.\n\n> Powered by [pull-review](https://github.com/imsky/pull-review)'
+    '\n\n> by [pull-review-johshisha](https://github.com/johshisha/pull-review)'
   );
 };

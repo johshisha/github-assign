@@ -37,19 +37,16 @@ app.post('/', function(req, res) {
         payload.comment.body.indexOf('/review') === 0
       ) {
         var issue = payload.issue;
-        var pullRequest = issue
-          ? payload.issue.pull_request
-          : payload.pull_request;
 
-        if (!pullRequest) {
-          throw Error('Missing pull request data');
+        if (!issue) {
+          throw Error('Missing issue data');
         }
 
-        var pullRequestURL = pullRequest.html_url;
+        var requestURL = issue.html_url;
         var retryReview = payload.comment.body.indexOf('/review again') === 0;
 
         return PullReview({
-          pullRequestURL: pullRequestURL,
+          pullRequestURL: requestURL,
           retryReview: retryReview
         });
       }
