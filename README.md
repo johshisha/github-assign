@@ -43,7 +43,7 @@ For details on configuration options, check out the [configuration](#configurati
 * Pick the **Issue comment** event
 * Click **Add webhook**
 
-To assign reviewers on a pull request, post `/review`. To [run Pull Review again](#reviewing-again) post `/review again`.
+To assign reviewers on a pull request, post `/assign`. To [run Pull Review again](#reviewing-again) post `/assign again`.
 
 > The public Pull Review server limits some configuration options. However, you can [run your own server](#server).
 
@@ -298,7 +298,7 @@ An array of pull request labels that are forbidden from pull request review.
 
 Sometimes it may be useful to run Pull Review again on a pull request, whether it's because the assigned reviewers are not available to review the PR or because another set of reviewers is necessary. You can run Pull Review again in the following ways:
 
-* [GitHub](#github): `/review again`
+* [GitHub](#github): `/assign again`
 * [Hubot](#hubot): `review ... again`
 * [CLI](#cli): `--retry-review` or `-r`
 * [API](#api): `retryReview: true`

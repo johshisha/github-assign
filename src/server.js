@@ -34,7 +34,7 @@ app.post('/', function(req, res) {
       if (
         payload.action === 'created' &&
         payload.comment &&
-        payload.comment.body.indexOf('/review') === 0
+        payload.comment.body.indexOf('/assign') === 0
       ) {
         var issue = payload.issue;
 
@@ -43,7 +43,7 @@ app.post('/', function(req, res) {
         }
 
         var requestURL = issue.html_url;
-        var retryReview = payload.comment.body.indexOf('/review again') === 0;
+        var retryReview = payload.comment.body.indexOf('/assign again') === 0;
 
         return PullReview({
           pullRequestURL: requestURL,

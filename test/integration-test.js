@@ -334,7 +334,7 @@ describe('pull-review', function() {
             }
           },
           comment: {
-            body: '/review'
+            body: '/assign'
           }
         })
         .then(function(response) {
@@ -359,7 +359,7 @@ describe('pull-review', function() {
             html_url: 'https://github.com/OWNER/REPO/pull/1'
           },
           comment: {
-            body: '/review'
+            body: '/assign'
           }
         })
         .then(function(response) {
@@ -377,7 +377,7 @@ describe('pull-review', function() {
         .send({
           action: 'created',
           comment: {
-            body: '/review'
+            body: '/assign'
           }
         })
         .catch(function(response) {
@@ -409,7 +409,7 @@ describe('pull-review', function() {
             html_url: ''
           },
           comment: {
-            body: '/review'
+            body: '/assign'
           }
         })
         .catch(function(response) {
